@@ -1,0 +1,34 @@
+{
+  "name": "usage-pace",
+  "version": "0.1.0",
+  "description": "Franja sobre el input con el % usado de la sesión de 5 horas, el tiempo al reset y un semáforo de ritmo",
+  "author": {
+    "name": "Gonzalo Díaz",
+    "email": "diazgonzalo1720@gmail.com"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "language": {
+      "type": "string",
+      "title": "Idioma / Language",
+      "description": "Idioma de los tooltips: es (español) o en (English)",
+      "options": [
+        "es",
+        "en"
+      ],
+      "default": "es"
+    },
+    "yellowMargin": {
+      "type": "number",
+      "title": "Margen amarillo (puntos)",
+      "description": "Cuántos puntos por encima del consumo esperado se toleran en amarillo antes de pasar a rojo",
+      "default": 10
+    },
+    "graceMinutes": {
+      "type": "number",
+      "title": "Minutos de gracia",
+      "description": "Al inicio de la ventana nunca se marca rojo durante estos minutos",
+      "default": 15
+    }
+  }
+}
