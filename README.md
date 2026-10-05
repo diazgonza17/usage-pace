@@ -80,6 +80,7 @@ claude plugin test .
 python3 scripts/build-preview.py
 python3 scripts/build-demo.py
 python3 scripts/build-stage.py
+python3 scripts/build-social.py
 ```
 
 - `validate` revisa el mod y lista todo lo que llama.
@@ -87,6 +88,7 @@ python3 scripts/build-stage.py
 - `build-preview.py` dibuja con el código del plugin cada estado de ejemplo y regenera [`docs/preview.html`](docs/preview.html), con la versión desktop en los dos idiomas (con tooltips al pasar el mouse) y la de terminal, y la captura `docs/screenshot.png` si tenés Chrome instalado.
 - `build-demo.py` arma [`docs/demo.gif`](docs/demo.gif): los cuatro estados con sus tooltips, en inglés, para compartir. Necesita Chrome y Pillow.
 - `build-stage.py` genera [`docs/stage.html`](docs/stage.html), una página para grabar la pantalla: alterna los cuatro estados cada 2 segundos sobre una réplica del input de Claude Code, con los tooltips reales al pasar el mouse. Espacio pausa, ← → cambian de estado, L cambia el idioma.
+- `build-social.py` genera [`docs/social-preview.png`](docs/social-preview.png) (1280×640), la imagen que muestra GitHub al compartir el link del repo. Se sube en Settings → Social preview.
 
 Regenerá estos archivos cuando cambies el dibujo o los textos.
 
