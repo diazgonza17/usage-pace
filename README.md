@@ -78,11 +78,15 @@ Con `/plugin configure usage-pace@gontzalo` en Claude Code, o pidiéndoselo a Cl
 claude plugin validate .
 claude plugin test .
 python3 scripts/build-preview.py
+python3 scripts/build-demo.py
 ```
 
 - `validate` revisa el mod y lista todo lo que llama.
 - `test` corre los tests de la lógica, los textos y el dibujo.
-- `build-preview.py` dibuja con el código del plugin cada estado de ejemplo y regenera [`docs/preview.html`](docs/preview.html), con la versión desktop en los dos idiomas (con tooltips al pasar el mouse) y la de terminal, y la captura `docs/screenshot.png` si tenés Chrome instalado. Regeneralos cuando cambies el dibujo o los textos.
+- `build-preview.py` dibuja con el código del plugin cada estado de ejemplo y regenera [`docs/preview.html`](docs/preview.html), con la versión desktop en los dos idiomas (con tooltips al pasar el mouse) y la de terminal, y la captura `docs/screenshot.png` si tenés Chrome instalado.
+- `build-demo.py` arma [`docs/demo.gif`](docs/demo.gif): los cuatro estados con sus tooltips, en inglés, para compartir. Necesita Chrome y Pillow.
+
+Regenerá estos archivos cuando cambies el dibujo o los textos.
 
 **Publicar una versión:** subí `version` en `.claude-plugin/plugin.json` y hacé push a `main`. A los usuarios solo les llega cuando cambia la versión, así que los commits intermedios no se publican.
 

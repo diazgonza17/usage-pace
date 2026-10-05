@@ -8,7 +8,7 @@ page. Hover the desktop rows to see the tooltips.
     python3 scripts/build-preview.py [output.html]
 
 It also renders docs/screenshot.png (the image in the README) with Chrome in
-headless mode, when Chrome is installed.
+headless mode, when Chrome is installed. scripts/build-demo.py makes the GIF.
 
 The default output is docs/preview.html, kept in git as a visual reference:
 regenerate it whenever the drawing or the texts change.
@@ -16,14 +16,12 @@ The terminal rows mock Claude Code's prompt; the line itself is the real one.
 """
 
 import html
-import json
-import subprocess
 import sys
 from pathlib import Path
 
-PLUGIN = Path(__file__).resolve().parent.parent
-OUTPUT = Path(sys.argv[1]) if len(sys.argv) > 1 else PLUGIN / "docs" / "preview.html"
-MARK = "@@PREVIEW@@"
+from render import DOCS, render_cases, screenshot
+
+OUTPUT = Path(sys.argv[1]) if len(sys.argv) > 1 else DOCS / "preview.html"
 
 # (caption, % used, hours until the reset)
 CASES = [
@@ -34,37 +32,7 @@ CASES = [
     ("Ventana reiniciada", 3, -1),
 ]
 
-TEST = f"""
-import {{ test }} from 'claude-code/testing'
-import {{ computePace }} from './pace'
-import {{ itemsFor, pillSvg, textLabel }} from './pill'
-
-const HOUR = 3600_000
-const NOW = 1_000_000_000_000
-const CONFIG = {{ yellowMargin: 10, graceMinutes: 15 }}
-const CASES = {json.dumps([[used, hours] for _, used, hours in CASES])}
-
-test('preview', () => {{
-  const out = CASES.map(([used, hours]) => {{
-    const pace = computePace(used, NOW + hours * HOUR, NOW, CONFIG)
-    const es = itemsFor(pace, 'es')
-    return {{ es: pillSvg(es).source, en: pillSvg(itemsFor(pace, 'en')).source, text: textLabel(es) }}
-  }})
-  console.log('{MARK}' + JSON.stringify(out))
-}})
-"""
-
-test_file = PLUGIN / "hooks" / "zz-preview.test.ts"
-test_file.write_text(TEST)
-try:
-    run = subprocess.run(["claude", "plugin", "test", str(PLUGIN)], capture_output=True, text=True)
-finally:
-    test_file.unlink()
-
-line = next((l for l in (run.stdout + run.stderr).splitlines() if MARK in l), None)
-if line is None:
-    sys.exit("preview test printed nothing:\n" + run.stdout + run.stderr)
-renders = json.loads(line.split(MARK, 1)[1])
+renders = render_cases([(used, hours) for _, used, hours in CASES])
 
 desktop = {
     language: "".join(
@@ -104,24 +72,14 @@ OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 OUTPUT.write_text(page)
 print(f"wrote {OUTPUT}")
 
-# The README image: green, yellow with its tooltip showing, red.
-CHROME = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
-if CHROME.exists():
-    rows = "".join(
-        f'<div class="band{" show-tip" if index == 1 else ""}">{renders[index]["es"]}</div>' for index in (0, 1, 2)
-    )
-    showcase = f"""<!doctype html><html><head><meta charset="utf-8"><style>
-      :root {{ color-scheme: dark; }} html, body {{ margin: 0; background: #1a1a1a; }}
-      body {{ padding: 16px; }} .band {{ background: #262626; border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }}
-      .band svg {{ display: block; }} .show-tip #t0 {{ opacity: 1 !important; }}
-    </style></head><body>{rows}</body></html>"""
-    html_path = OUTPUT.parent / "screenshot.html"
-    html_path.write_text(showcase)
-    png = OUTPUT.parent / "screenshot.png"
-    subprocess.run(
-        [str(CHROME), "--headless", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=2",
-         "--window-size=640,166", f"--screenshot={png}", html_path.as_uri()],
-        capture_output=True,
-    )
-    html_path.unlink()
-    print(f"wrote {png}" if png.exists() else "screenshot failed")
+# The README image: the four states, the yellow one with its tooltip showing.
+rows = "".join(
+    f'<div class="band{" show-tip" if index == 1 else ""}">{renders[index]["es"]}</div>' for index in range(4)
+)
+showcase = f"""<!doctype html><html><head><meta charset="utf-8"><style>
+  :root {{ color-scheme: dark; }} html, body {{ margin: 0; background: #1a1a1a; }}
+  body {{ padding: 16px; }} .band {{ background: #262626; border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }}
+  .band svg {{ display: block; }} .show-tip #t0 {{ opacity: 1 !important; }}
+</style></head><body>{rows}</body></html>"""
+png = DOCS / "screenshot.png"
+print(f"wrote {png}" if screenshot(showcase, png, 640, 216) else "skipped the screenshot: Chrome not found")
