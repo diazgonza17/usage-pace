@@ -23,21 +23,21 @@ from render import DOCS, render_cases, screenshot
 
 OUTPUT = Path(sys.argv[1]) if len(sys.argv) > 1 else DOCS / "preview.html"
 
-# (caption, % used, hours until the reset)
+# (caption, % used, hours until the reset, weekly % used, hours until the weekly reset)
 CASES = [
-    ("Verde: por debajo del ritmo", 12, 4.4),
-    ("Amarillo: un poco por encima", 25, 4),
-    ("Rojo: muy por encima", 60, 3),
-    ("100%: límite alcanzado", 100, 1),
-    ("Ventana reiniciada", 3, -1),
+    ("Verde: por debajo del ritmo", 12, 4.4, 48, 76),
+    ("Amarillo: un poco por encima", 25, 4, 58, 84),
+    ("Rojo: muy por encima", 60, 3, 72, 84),
+    ("100%: límite alcanzado", 100, 1, 88, 40),
+    ("Ventana reiniciada", 3, -1, 30, 100),
 ]
 
-renders = render_cases([(used, hours) for _, used, hours in CASES])
+renders = render_cases([case[1:] for case in CASES])
 
 desktop = {
     language: "".join(
         f'<figure><figcaption>{html.escape(caption)}</figcaption><div class="band">{r[language]}</div></figure>'
-        for (caption, _, _), r in zip(CASES, renders)
+        for (caption, *_), r in zip(CASES, renders)
     )
     for language in ("es", "en")
 }
@@ -46,7 +46,7 @@ terminal = "".join(
     f'<span class="dim">{html.escape(r["text"])}</span>\n'
     f'<span class="rule"></span><span class="caret">&gt;</span> \n'
     f'<span class="rule"></span><span class="dim">  ? for shortcuts</span></pre></figure>'
-    for (caption, _, _), r in zip(CASES, renders)
+    for (caption, *_), r in zip(CASES, renders)
 )
 
 page = f"""<!doctype html>
@@ -57,9 +57,9 @@ page = f"""<!doctype html>
   h2 {{ font-weight: 600; font-size: 15px; margin: 32px 0 12px; }}
   figure {{ margin: 0 0 14px; }}
   figcaption {{ color: #8a8a8a; font-size: 12px; margin-bottom: 6px; }}
-  .band {{ background: #262626; border-radius: 12px; padding: 10px 12px; width: 720px; }}
+  .band {{ background: #262626; border-radius: 12px; padding: 10px 12px; width: 940px; }}
   .band svg {{ display: block; }}
-  .term {{ background: #0d0d0d; border-radius: 8px; padding: 12px 14px; width: 720px; margin: 0;
+  .term {{ background: #0d0d0d; border-radius: 8px; padding: 12px 14px; width: 940px; margin: 0;
            font: 13px/1.45 Menlo, "SF Mono", ui-monospace, monospace; color: #d4d4d4; }}
   .dim {{ color: #7c7c7c; }} .rule {{ display: block; border-top: 1px solid #3a3a3a; margin: 4px 0; }} .caret {{ color: #d4d4d4; }}
 </style></head><body>
@@ -82,4 +82,4 @@ showcase = f"""<!doctype html><html><head><meta charset="utf-8"><style>
   .band svg {{ display: block; }} .show-tip #t0 {{ opacity: 1 !important; }}
 </style></head><body>{rows}</body></html>"""
 png = DOCS / "screenshot.png"
-print(f"wrote {png}" if screenshot(showcase, png, 640, 216) else "skipped the screenshot: Chrome not found")
+print(f"wrote {png}" if screenshot(showcase, png, 900, 216) else "skipped the screenshot: Chrome not found")

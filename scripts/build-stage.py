@@ -16,8 +16,9 @@ import json
 
 from render import DOCS, render_cases
 
-# (% used, hours until the reset): green, yellow, red, limit.
-STATES = [(12, 4.4), (25, 4), (60, 3), (100, 1)]
+# (% used, hours until the reset, weekly % used, hours until the weekly reset):
+# green, yellow, red, limit.
+STATES = [(12, 4.4, 48, 76), (25, 4, 58, 84), (60, 3, 72, 84), (100, 1, 88, 40)]
 
 renders = render_cases(STATES)
 svgs = {language: [render[language] for render in renders] for language in ("en", "es")}
@@ -34,7 +35,7 @@ page = f"""<!doctype html>
   html, body {{ margin: 0; height: 100%; background: #1a1a1a; }}
   body {{ display: flex; align-items: flex-end; justify-content: center; padding: 0 24px 48px;
           box-sizing: border-box; font: 15px system-ui, -apple-system, BlinkMacSystemFont, sans-serif; color: #ececec; }}
-  .stack {{ width: min(760px, 100%); }}
+  .stack {{ width: min(980px, 100%); }}
   .band {{ background: #262626; border-radius: 14px; padding: 11px 12px; margin-bottom: 8px; }}
   .band svg {{ display: block; }}
   .prompt {{ display: flex; align-items: center; gap: 10px; border: 1px solid #3a3a3a; border-radius: 14px;

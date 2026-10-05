@@ -14,18 +14,18 @@ from PIL import Image
 
 from render import DOCS, render_cases, screenshot
 
-WIDTH, HEIGHT = 720, 120
+WIDTH, HEIGHT = 960, 120
 
-# (% used, hours until the reset)
-STATES = [(12, 4.4), (25, 4), (60, 3), (100, 1)]
+# (% used, hours until the reset, weekly % used, hours until the weekly reset)
+STATES = [(12, 4.4, 48, 76), (25, 4, 58, 84), (60, 3, 72, 84), (100, 1, 88, 40)]
 
 # (state, hovered value or None, ms): rest, then the tooltips. The first state
-# shows all three tooltips; the rest show the pace one, which changes.
+# shows every tooltip; the rest show the two pace ones, which change.
 FRAMES = [
-    (0, None, 1200), (0, 0, 2200), (0, 1, 1800), (0, 2, 1600),
-    (1, None, 1000), (1, 0, 2600),
-    (2, None, 1000), (2, 0, 2800),
-    (3, None, 1000), (3, 0, 2400),
+    (0, None, 1200), (0, 0, 2200), (0, 1, 1800), (0, 2, 1600), (0, 3, 2400), (0, 4, 1800),
+    (1, None, 1000), (1, 0, 2600), (1, 3, 2800),
+    (2, None, 1000), (2, 0, 2800), (2, 3, 2800),
+    (3, None, 1000), (3, 0, 2400), (3, 3, 2400),
 ]
 
 CURSOR = (
@@ -42,11 +42,11 @@ def page(svg: str, hovered: int | None) -> str:
         if hovered is not None
         else ""
     )
-    # The cursor points at the hovered value's icon (the ring, past Isaac, for the
-    # first one), or rests in the prompt when nothing is hovered.
+    # The cursor points at the hovered value's icon (the ring, past Isaac or the
+    # "7d", for the pace ones), or rests in the prompt when nothing is hovered.
     place = (
         f"const box = document.querySelector('.band #i{hovered} rect').getBoundingClientRect();"
-        f"cursor.style.left = (box.left + {25 if hovered == 0 else 9}) + 'px'; cursor.style.top = (box.top + 13) + 'px';"
+        f"cursor.style.left = (box.left + {25 if hovered in (0, 3) else 9}) + 'px'; cursor.style.top = (box.top + 13) + 'px';"
         if hovered is not None
         else "cursor.style.left = '420px'; cursor.style.top = '76px';"
     )
