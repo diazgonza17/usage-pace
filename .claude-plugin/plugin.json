@@ -8,6 +8,7 @@
   },
   "homepage": "https://github.com/diazgonza17/usage-pace",
   "repository": "https://github.com/diazgonza17/usage-pace",
+  "license": "MIT",
   "types": "./types/index.d.ts",
   "userConfig": {
     "language": {
