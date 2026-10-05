@@ -6,7 +6,9 @@ import { SPRITES } from './sprites'
 
 export type Icon = 'pace' | 'target' | 'clock' | 'refresh'
 
-export type Item = { icon: Icon; label: string; tip: string; light?: Light; used?: number }
+// `prefix` names the window a group belongs to ("7d"); the 5-hour group has
+// Isaac instead.
+export type Item = { icon: Icon; label: string; tip: string; light?: Light; used?: number; prefix?: string }
 
 // The second half of the progress tip; off pace, how long to ease off to be
 // green again (always before the reset while under 100%).
@@ -19,33 +21,60 @@ const rhythm = (pace: Extract<Pace, { kind: 'live' }>, text: Strings): string =>
   return pace.light === 'yellow' ? text.lookOut(wait) : text.burning(wait)
 }
 
-export const itemsFor = (pace: Pace, language: Language): Item[] => {
+const WEEK_PREFIX = '7d'
+
+// The 5-hour group (Isaac, ring, expected, reset) and, when there is a weekly
+// reading, the weekly one (ring and expected; its reset is in the ring's tip).
+export const itemsFor = (pace: Pace | null, language: Language, weekPace: Pace | null = null): Item[] => {
   const text = STRINGS[language]
-  if (pace.kind === 'stale') {
-    return [{ icon: 'refresh', label: '', tip: text.stale }]
+  const items: Item[] = []
+
+  if (pace?.kind === 'stale') {
+    items.push({ icon: 'refresh', label: '', tip: text.stale })
+  } else if (pace) {
+    items.push(
+      {
+        icon: 'pace',
+        label: `${Math.round(pace.used)}%`,
+        tip: `${text.used} · ${rhythm(pace, text)}`,
+        light: pace.light,
+        used: pace.used,
+      },
+      { icon: 'target', label: `${Math.round(pace.expected)}%`, tip: text.expected },
+      { icon: 'clock', label: formatRemaining(pace.remainingMs), tip: text.reset },
+    )
   }
 
-  return [
-    {
-      icon: 'pace',
-      label: `${Math.round(pace.used)}%`,
-      tip: `${text.used} · ${rhythm(pace, text)}`,
-      light: pace.light,
-      used: pace.used,
-    },
-    { icon: 'target', label: `${Math.round(pace.expected)}%`, tip: text.expected },
-    { icon: 'clock', label: formatRemaining(pace.remainingMs), tip: text.reset },
-  ]
+  if (weekPace?.kind === 'stale') {
+    items.push({ icon: 'refresh', label: '', tip: text.weekStale, prefix: WEEK_PREFIX })
+  } else if (weekPace) {
+    items.push(
+      {
+        icon: 'pace',
+        label: `${Math.round(weekPace.used)}%`,
+        tip: `${text.weekUsed(formatRemaining(weekPace.remainingMs))} · ${rhythm(weekPace, text)}`,
+        light: weekPace.light,
+        used: weekPace.used,
+        prefix: WEEK_PREFIX,
+      },
+      { icon: 'target', label: `${Math.round(weekPace.expected)}%`, tip: text.weekExpected },
+    )
+  }
+
+  return items
 }
 
 const EMOJI: Record<Light, string> = { green: '🟢', yellow: '🟡', red: '🔴' }
 
-// The terminal draws text only: each icon as its emoji.
+// The terminal draws text only: each icon as its emoji, the weekly group after a dot.
 export const textLabel = (items: Item[]): string =>
   items
-    .map(item => {
+    .map((item, index) => {
       const emoji = item.icon === 'pace' ? EMOJI[item.light ?? 'green'] : { target: '🎯', clock: '⏳', refresh: '🔄' }[item.icon]
-      return item.label === '' ? emoji : `${emoji} ${item.label}`
+      const value = item.label === '' ? emoji : `${emoji} ${item.label}`
+      if (!item.prefix) return value
+
+      return `${index > 0 ? '· ' : ''}${item.prefix} ${value}`
     })
     .join(' ')
 
@@ -114,6 +143,8 @@ const iconSvg = (item: Item, x: number): string => {
 }
 
 const ISAAC_GAP = 5
+const PREFIX_GAP = 4
+const SEPARATOR_GAP = 8
 
 // Isaac reacts to the pace: thumbs up, idle, screaming, or flat on the floor at
 // the limit. Drawn as vector pixels (the desktop strips embedded images) at half
@@ -131,7 +162,7 @@ const isaacSvg = (item: Item, x: number): { markup: string; width: number } => {
 const STYLE = [
   ':root{color-scheme:light dark;background:transparent}',
   `text{font-family:${FONT}}`,
-  '.label{font-size:13px;fill:#6b6b6b}.line{stroke:#6b6b6b}.dot{fill:#6b6b6b}.track{stroke:#d9d9d9}',
+  '.label{font-size:13px;fill:#6b6b6b}.prefix{font-weight:600}.line{stroke:#6b6b6b}.dot{fill:#6b6b6b}.track{stroke:#d9d9d9}',
   '.item{cursor:default}.item:hover .label{fill:#1a1a1a}.item:hover .line{stroke:#1a1a1a}.item:hover .dot{fill:#1a1a1a}',
   '.tip{opacity:0;pointer-events:none;transition:opacity 80ms}',
   '.tip rect,.tip path{fill:#fff;stroke:#d4d4d4}.tip text{font-size:12px;fill:#1a1a1a}',
@@ -148,10 +179,22 @@ export const pillSvg = (items: Item[]): { source: string; width: number } => {
   let x = 1
   const groups: string[] = []
   for (const [index, item] of items.entries()) {
+    // A thin rule between the 5-hour group and the weekly one.
+    if (item.prefix && index > 0) {
+      const ruleX = x - ITEM_GAP / 2 + SEPARATOR_GAP / 2
+      groups.push(`<path class="track" d="M${ruleX} 4V${HEIGHT - 4}" stroke-width="1"/>`)
+      x += SEPARATOR_GAP
+    }
     const start = x
-    const isaac = item.icon === 'pace' ? isaacSvg(item, x) : null
+    const isaac = item.icon === 'pace' && !item.prefix ? isaacSvg(item, x) : null
     if (isaac) {
       x += isaac.width + ISAAC_GAP
+    }
+    let prefix = ''
+    if (item.prefix) {
+      const prefixWidth = textWidth(item.prefix, LABEL_SIZE)
+      prefix = `<text class="label prefix" x="${x}" y="${MID}" dominant-baseline="central" textLength="${prefixWidth.toFixed(2)}" lengthAdjust="spacing">${escape(item.prefix)}</text>`
+      x += prefixWidth + PREFIX_GAP
     }
     const labelWidth = item.label === '' ? 0 : textWidth(item.label, LABEL_SIZE)
     const label =
@@ -160,7 +203,7 @@ export const pillSvg = (items: Item[]): { source: string; width: number } => {
         : ''
     const end = x + ICON + (labelWidth > 0 ? ICON_GAP + labelWidth : 0)
     groups.push(
-      `<g class="item" id="i${index}"><rect x="${start - 3}" y="0" width="${end - start + 6}" height="${HEIGHT}" fill="transparent"/>${isaac?.markup ?? ''}${iconSvg(item, x)}${label}</g>`,
+      `<g class="item" id="i${index}"><rect x="${start - 3}" y="0" width="${end - start + 6}" height="${HEIGHT}" fill="transparent"/>${isaac?.markup ?? ''}${prefix}${iconSvg(item, x)}${label}</g>`,
     )
     x = end + ITEM_GAP
   }

@@ -2,6 +2,6 @@ export type Reading = { percentUsed: number; resetsAt: string }
 
 declare module 'claude-code' {
   interface PluginState {
-    'usage-pace': { fiveHour: Reading | null }
+    'usage-pace': { fiveHour: Reading | null; sevenDay: Reading | null }
   }
 }
