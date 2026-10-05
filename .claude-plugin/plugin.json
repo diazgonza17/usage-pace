@@ -1,11 +1,13 @@
 {
   "name": "usage-pace",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Franja sobre el input con el % usado de la sesión de 5 horas, el tiempo al reset y un semáforo de ritmo",
   "author": {
     "name": "Gonzalo Díaz",
     "email": "diazgonzalo1720@gmail.com"
   },
+  "homepage": "https://github.com/diazgonza17/usage-pace",
+  "repository": "https://github.com/diazgonza17/usage-pace",
   "types": "./types/index.d.ts",
   "userConfig": {
     "language": {

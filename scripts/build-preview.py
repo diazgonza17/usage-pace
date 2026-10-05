@@ -7,6 +7,9 @@ page. Hover the desktop rows to see the tooltips.
 
     python3 scripts/build-preview.py [output.html]
 
+It also renders docs/screenshot.png (the image in the README) with Chrome in
+headless mode, when Chrome is installed.
+
 The default output is docs/preview.html, kept in git as a visual reference:
 regenerate it whenever the drawing or the texts change.
 The terminal rows mock Claude Code's prompt; the line itself is the real one.
@@ -100,3 +103,25 @@ page = f"""<!doctype html>
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 OUTPUT.write_text(page)
 print(f"wrote {OUTPUT}")
+
+# The README image: green, yellow with its tooltip showing, red.
+CHROME = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
+if CHROME.exists():
+    rows = "".join(
+        f'<div class="band{" show-tip" if index == 1 else ""}">{renders[index]["es"]}</div>' for index in (0, 1, 2)
+    )
+    showcase = f"""<!doctype html><html><head><meta charset="utf-8"><style>
+      :root {{ color-scheme: dark; }} html, body {{ margin: 0; background: #1a1a1a; }}
+      body {{ padding: 16px; }} .band {{ background: #262626; border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }}
+      .band svg {{ display: block; }} .show-tip #t0 {{ opacity: 1 !important; }}
+    </style></head><body>{rows}</body></html>"""
+    html_path = OUTPUT.parent / "screenshot.html"
+    html_path.write_text(showcase)
+    png = OUTPUT.parent / "screenshot.png"
+    subprocess.run(
+        [str(CHROME), "--headless", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=2",
+         "--window-size=640,166", f"--screenshot={png}", html_path.as_uri()],
+        capture_output=True,
+    )
+    html_path.unlink()
+    print(f"wrote {png}" if png.exists() else "screenshot failed")
