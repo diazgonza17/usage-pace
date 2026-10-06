@@ -17,27 +17,31 @@ MARK = "@@RENDER@@"
 
 TEST = """
 import {{ test }} from 'claude-code/testing'
-import {{ computePace }} from './pace'
+import {{ WEEK_MS, computePace }} from './pace'
 import {{ itemsFor, pillSvg, textLabel }} from './pill'
 
 const HOUR = 3600_000
 const NOW = 1_000_000_000_000
 const CONFIG = {{ yellowMargin: 10, graceMinutes: 15 }}
+const WEEK_CONFIG = {{ ...CONFIG, graceMinutes: 8 * 60 }}
 const CASES = {cases}
 
 test('render', () => {{
-  const out = CASES.map(([used, hours]) => {{
+  const out = CASES.map(([used, hours, weekUsed, weekHours]) => {{
     const pace = computePace(used, NOW + hours * HOUR, NOW, CONFIG)
-    const es = itemsFor(pace, 'es')
-    return {{ es: pillSvg(es).source, en: pillSvg(itemsFor(pace, 'en')).source, text: textLabel(es) }}
+    const weekPace =
+      weekUsed === undefined ? null : computePace(weekUsed, NOW + weekHours * HOUR, NOW, WEEK_CONFIG, WEEK_MS)
+    const es = itemsFor(pace, 'es', weekPace)
+    return {{ es: pillSvg(es).source, en: pillSvg(itemsFor(pace, 'en', weekPace)).source, text: textLabel(es) }}
   }})
   console.log('{mark}' + JSON.stringify(out))
 }})
 """
 
 
-def render_cases(cases: list[tuple[float, float]]) -> list[dict]:
-    """For each (% used, hours until the reset): the desktop SVG in es and en, and the terminal line."""
+def render_cases(cases: list[tuple[float, ...]]) -> list[dict]:
+    """For each (% used, hours until the reset[, weekly % used, hours until the weekly reset]):
+    the desktop SVG in es and en, and the terminal line."""
     test_file = PLUGIN / "hooks" / "zz-render.test.ts"
     test_file.write_text(TEST.format(cases=json.dumps([list(case) for case in cases]), mark=MARK))
     try:

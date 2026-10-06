@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { WINDOW_MS, computePace, formatRemaining, formatWait } from './pace'
+import { WEEK_MS, WINDOW_MS, computePace, formatRemaining, formatWait } from './pace'
 
 const HOUR = 60 * 60 * 1000
 const NOW = 1_000_000_000_000
@@ -52,4 +52,27 @@ test('wait formatting', () => {
   expect(formatWait(15 * 60000)).toBe('15 min')
   expect(formatWait(60 * 60000)).toBe('1h')
   expect(formatWait(75 * 60000)).toBe('1h 15min')
+})
+
+const weekAt = (used: number, hoursLeft: number, graceHours = 8) =>
+  computePace(used, NOW + hoursLeft * HOUR, NOW, { ...CONFIG, graceMinutes: graceHours * 60 }, WEEK_MS)
+
+test('the weekly window expects usage linearly over 7 days', () => {
+  // 3.5 days in: 50% is on pace.
+  expect(weekAt(50, 84)).toMatchObject({ light: 'green', expected: 50 })
+  expect(weekAt(55, 84)).toMatchObject({ light: 'yellow' })
+  expect(weekAt(65, 84)).toMatchObject({ light: 'red' })
+})
+
+test('the weekly grace period is set in hours', () => {
+  expect(weekAt(20, 168 - 7)).toMatchObject({ light: 'yellow' })
+  expect(weekAt(20, 168 - 9)).toMatchObject({ light: 'red' })
+  expect(weekAt(20, 168 - 9, 12)).toMatchObject({ light: 'yellow' })
+})
+
+test('days in remaining time and waits', () => {
+  expect(formatRemaining(76 * HOUR)).toBe('3d 4h')
+  expect(formatRemaining(24 * HOUR)).toBe('1d 0h')
+  expect(formatWait(33 * HOUR)).toBe('1d 9h')
+  expect(formatWait(48 * HOUR)).toBe('2d')
 })

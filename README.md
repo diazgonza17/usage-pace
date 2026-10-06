@@ -1,6 +1,6 @@
 # usage-pace
 
-Un mod para Claude Code que muestra, arriba del input, cuánto llevás usado de la sesión de 5 horas, cuánto deberías llevar a esta altura y cuánto falta para el reset. Isaac te avisa si estás quemando tokens.
+Un mod para Claude Code que muestra, arriba del input, cuánto llevás usado de la sesión de 5 horas y de la semana, cuánto deberías llevar a esta altura y cuánto falta para el reset. Isaac te avisa si estás quemando tokens.
 
 ![usage-pace en el desktop de Claude Code](docs/screenshot.png)
 
@@ -8,16 +8,18 @@ Un mod para Claude Code que muestra, arriba del input, cuánto llevás usado de 
 
 | Elemento | Qué es |
 |---|---|
-| Isaac | Reacciona al ritmo: pulgar arriba (verde), tranquilo (amarillo), gritando (rojo), tirado en el piso (100% usado) |
+| Isaac | Reacciona al ritmo de la sesión de 5 horas: pulgar arriba (verde), tranquilo (amarillo), gritando (rojo), tirado en el piso (100% usado) |
 | Anillo + `34%` | Usado de la sesión de 5 horas. El anillo se llena con el % y toma el color del semáforo: verde si vas igual o por debajo de lo esperado, amarillo hasta `yellowMargin` puntos por encima, rojo más allá. Durante los primeros `graceMinutes` nunca marca rojo |
 | Diana + `20%` | Lo que correspondería haber usado según el tiempo transcurrido |
 | Reloj + `2h 41m` | Tiempo hasta el reset |
+| `7d` + anillo + `48%` | Usado de la semana, con el mismo semáforo. El tooltip dice cuándo se reinicia la semana y, si vas por encima, cuánto aflojar |
+| `7d` + diana + `55%` | Lo que correspondería haber usado de la semana, repartido parejo en los 7 días (24/7) |
 | Flecha circular | La ventana se reinició; se actualiza con la próxima respuesta |
 
 Al pasar el mouse sobre un valor aparece al instante un tooltip con su descripción. Cuando vas por encima del ritmo, el tooltip del anillo dice cuánto tiempo aflojar para volver a verde. La terminal muestra la misma información en una línea con emojis, sin tooltips:
 
 ```
-🟢 34% 🎯 20% ⏳ 2h 41m
+🟢 34% 🎯 20% ⏳ 2h 41m · 7d 🟢 48% 🎯 55%
 ```
 
 **Cuándo se actualiza:** el % usado llega con las respuestas de la API en la sesión (Claude Code avisa al terminar cada turno o cuando sube un punto entero). El tiempo restante y el % esperado se recalculan cada 60 segundos.
@@ -64,7 +66,9 @@ Con `/plugin configure usage-pace@gontzalo` en Claude Code, o pidiéndoselo a Cl
 |---|---|---|
 | `language` | `es` | Idioma de los tooltips: `es` o `en` |
 | `yellowMargin` | `10` | Puntos por encima de lo esperado que se toleran en amarillo antes de pasar a rojo |
-| `graceMinutes` | `15` | Minutos al inicio de la ventana en los que nunca se marca rojo |
+| `showWeekly` | `true` | Muestra el grupo `7d` con el ritmo semanal. En `false` queda solo la sesión de 5 horas |
+| `graceMinutes` | `15` | Minutos al inicio de la sesión de 5 horas en los que nunca se marca rojo |
+| `weeklyGraceHours` | `8` | Horas al inicio de la semana en las que nunca se marca rojo. Por defecto es la misma proporción que los 15 minutos de la sesión |
 
 ## Actualizar
 
@@ -86,7 +90,7 @@ python3 scripts/build-social.py
 - `validate` revisa el mod y lista todo lo que llama.
 - `test` corre los tests de la lógica, los textos y el dibujo.
 - `build-preview.py` dibuja con el código del plugin cada estado de ejemplo y regenera [`docs/preview.html`](docs/preview.html), con la versión desktop en los dos idiomas (con tooltips al pasar el mouse) y la de terminal, y la captura `docs/screenshot.png` si tenés Chrome instalado.
-- `build-demo.py` arma [`docs/demo.gif`](docs/demo.gif): los cuatro estados con sus tooltips, en inglés, para compartir. Necesita Chrome y Pillow.
+- `build-demo.py` arma [`docs/demo.gif`](docs/demo.gif): los cuatro estados con sus tooltips (los de 5 horas y los semanales), en inglés, para compartir. Necesita Chrome y Pillow.
 - `build-stage.py` genera [`docs/stage.html`](docs/stage.html), una página para grabar la pantalla: alterna los cuatro estados cada 2 segundos sobre una réplica del input de Claude Code, con los tooltips reales al pasar el mouse. Espacio pausa, ← → cambian de estado, L cambia el idioma.
 - `build-social.py` genera [`docs/social-preview.png`](docs/social-preview.png) (1280×640), la imagen que muestra GitHub al compartir el link del repo. Se sube en Settings → Social preview.
 
