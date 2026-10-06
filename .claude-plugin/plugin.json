@@ -1,6 +1,6 @@
 {
   "name": "usage-pace",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Franja sobre el input con el % usado de la sesión de 5 horas y de la semana, el tiempo al reset y un semáforo de ritmo",
   "author": {
     "name": "Gonzalo Díaz",
